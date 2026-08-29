@@ -84,6 +84,7 @@ export function TransactionPanel({
   const [preview, setPreview] = useState<TransactionPreviewData | null>(null);
   const [isBuildingPreview, setIsBuildingPreview] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const formId = useId();
 
   const assetOptions = balances ?? [];
 
@@ -181,11 +182,8 @@ export function TransactionPanel({
   }
 
   /** Builds a preview of the transaction and opens the confirmation modal. */
-  async function handleReview(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    if (state === "loading") return;
-    if (!address || !canSubmit) return;
-
+  async function buildPreview() {
+    if (!address) return;
     setIsBuildingPreview(true);
     try {
       const { data: feeData } = client ? await client.transaction.estimateFee() : { data: null };
@@ -211,14 +209,16 @@ export function TransactionPanel({
     }
   }
 
-  const handleSendClick = () => {
+  /** Form submit handler — fires on Send button click and Enter key press. */
+  function handleFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (state === "loading" || !address || !canSubmit) return;
     if (previewMode) {
-      void handleReview();
+      void buildPreview();
     } else {
       void submitTransaction();
     }
-  };
+  }
 
   const explorerUrl = result ? explorerTxUrl(network, result.hash) : null;
 
@@ -316,7 +316,7 @@ export function TransactionPanel({
             </div>
           </div>
         ) : (
-          <form onSubmit={handleReview} className="flex flex-col gap-5">
+          <form id={formId} onSubmit={handleFormSubmit} className="flex flex-col gap-5">
             <Input
               label="Destination Address"
               placeholder="G..."
@@ -342,7 +342,7 @@ export function TransactionPanel({
               label="Asset"
               value={selectedAsset}
               onChange={(e) => setAsset(e.target.value)}
-              disabled={state === "loading" || isLoadingAccount}
+              disabled={state === "loading" || isLoadingAccount || assetOptions.length === 0}
             >
               {isLoadingAccount ? (
                 <option value="">Loading assets…</option>
@@ -446,10 +446,11 @@ export function TransactionPanel({
           </Button>
         ) : (
           <Button
+            type="submit"
+            form={formId}
             size="md"
             loading={state === "loading" || isBuildingPreview}
             disabled={!canSubmit}
-            onClick={handleSendClick}
           >
             {state === "loading"
               ? "Submitting…"

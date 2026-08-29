@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useSorokit } from "@/context/useSorokit";
+import { getClient } from "@/lib/client";
 
 import { SorobanPanel } from "./SorobanPanel";
 
@@ -30,6 +31,7 @@ describe("SorobanPanel", () => {
     vi.mocked(useSorokit).mockReturnValue({
       isConnected: true,
       address: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWNA",
+      get client() { return getClient(); },
     } as unknown as ReturnType<typeof useSorokit>);
   });
 
